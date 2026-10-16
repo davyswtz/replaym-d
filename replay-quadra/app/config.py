@@ -3,13 +3,16 @@
 Aqui ficam só constantes. Se quiser mudar a duração do replay, a câmera
 ou a pasta de destino, mude neste arquivo e nenhum outro.
 """
+import os
 from pathlib import Path
 
 # Raiz do projeto (pasta replay-quadra/), calculada a partir deste arquivo.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ---------------------------------------------------------------- Câmera
-CAMERA_DEVICE = "/dev/video0"
+# Caminho fixo da Logitech C922 (não muda se reconectar a câmera, ao contrário
+# de /dev/videoN). O "index0" é o nó de captura. Veja com: ls -l /dev/v4l/by-id/
+CAMERA_DEVICE = "/dev/v4l/by-id/usb-046d_C922_Pro_Stream_Webcam_B63CF8BF-video-index0"
 VIDEO_SIZE = "1280x720"
 FRAMERATE = 30
 # Formato que a webcam entrega. Descubra com: v4l2-ctl --list-formats-ext
@@ -41,7 +44,8 @@ SEGMENTS_PER_REPLAY = REPLAY_SECONDS // SEGMENT_SECONDS
 BUFFER_SEGMENTS = SEGMENTS_PER_REPLAY + 5
 
 # ---------------------------------------------------------------- Replays
-REPLAYS_DIR = BASE_DIR / "replays"
+# Pode ser trocada pela variável de ambiente REPLAYS_DIR (ex.: cartão SD grande).
+REPLAYS_DIR = Path(os.environ.get("REPLAYS_DIR", BASE_DIR / "replays"))
 REPLAY_PREFIX = "replay_"
 REPLAY_EXT = ".mp4"
 
