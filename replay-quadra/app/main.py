@@ -11,13 +11,13 @@ from app.recorder import Recorder
 from app.routes import bp
 
 
-def create_app():
+def criar_app():
     app = Flask(__name__)
     app.register_blueprint(bp)
     return app
 
 
-def main():
+def principal():
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -27,8 +27,8 @@ def main():
 
     # Começa a gravar o buffer assim que o programa sobe.
     recorder = Recorder()
-    recorder.start()
-    atexit.register(recorder.stop)
+    recorder.iniciar()
+    atexit.register(recorder.parar)
 
     # O systemd encerra o serviço com SIGTERM. Convertendo em sys.exit(),
     # o atexit roda e o FFmpeg é encerrado direito.
@@ -36,10 +36,10 @@ def main():
 
     # use_reloader=False: o reloader do Flask abriria o programa duas vezes,
     # e teríamos dois FFmpeg disputando a mesma câmera.
-    create_app().run(
+    criar_app().run(
         host=config.HOST, port=config.PORT, threaded=True, use_reloader=False
     )
 
 
 if __name__ == "__main__":
-    main()
+    principal()

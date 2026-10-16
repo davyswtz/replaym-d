@@ -58,7 +58,7 @@
     const player = document.getElementById('player');
     const lista = document.getElementById('lista');
 
-    function setStatus(texto, tipo) {
+    function definirStatus(texto, tipo) {
       statusEl.textContent = texto;
       statusEl.className = tipo || '';
     }
@@ -74,7 +74,7 @@
       if (!confirm('Apagar ' + nome + '?')) return;
       const res = await fetch('/replays/' + encodeURIComponent(nome), { method: 'DELETE' });
       if (res.ok) carregarLista();
-      else setStatus('Não foi possível apagar', 'erro');
+      else definirStatus('Não foi possível apagar', 'erro');
     }
 
     async function carregarLista() {
@@ -112,16 +112,16 @@
 
     async function salvarReplay() {
       btn.disabled = true;
-      setStatus('Salvando replay...');
+      definirStatus('Salvando replay...');
       try {
         const res = await fetch('/replay', { method: 'POST' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Erro ao salvar o replay');
-        setStatus('Replay salvo!', 'ok');
+        definirStatus('Replay salvo!', 'ok');
         await carregarLista();
         assistir(data.name);
       } catch (e) {
-        setStatus(e.message, 'erro');
+        definirStatus(e.message, 'erro');
       } finally {
         btn.disabled = false;
       }

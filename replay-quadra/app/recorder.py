@@ -21,7 +21,7 @@ class Recorder:
         self._stop_event = threading.Event()
 
     # ------------------------------------------------------------ comando
-    def _build_command(self):
+    def _montar_comando(self):
         cmd = ["ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "warning"]
 
         # Entrada: a webcam via Video4Linux2
@@ -57,13 +57,13 @@ class Recorder:
         return cmd
 
     # ----------------------------------------------------------- processo
-    def _prepare_buffer(self):
+    def _preparar_buffer(self):
         """Começa com o buffer limpo, sem sobras da execução anterior."""
         shutil.rmtree(config.BUFFER_DIR, ignore_errors=True)
         config.BUFFER_DIR.mkdir(parents=True, exist_ok=True)
 
-    def _launch(self):
-        cmd = self._build_command()
+    def _iniciar_processo(self):
+        cmd = self._montar_comando()
         log.info("Iniciando FFmpeg: %s", " ".join(cmd))
         # Os avisos/erros do FFmpeg vão para um arquivo de log. Se a câmera
         # não abrir, é lá que você descobre o motivo.
@@ -72,32 +72,32 @@ class Recorder:
                 cmd, stdout=subprocess.DEVNULL, stderr=logfile
             )
 
-    def is_running(self):
+    def esta_rodando(self):
         # poll() devolve None enquanto o processo está vivo
         return self._process is not None and self._process.poll() is None
 
-    def _watch(self):
+    def _vigiar(self):
         """Roda em outra thread: se o FFmpeg cair, sobe de novo."""
         while not self._stop_event.wait(2):
-            if not self.is_running():
+            if not self.esta_rodando():
                 code = self._process.returncode if self._process else None
                 log.warning("FFmpeg parou (código %s). Reiniciando...", code)
                 # Limpa o buffer: sobraria um segmento cortado no meio e um
                 # "buraco" no tempo entre a gravação antiga e a nova.
-                self._prepare_buffer()
-                self._launch()
+                self._preparar_buffer()
+                self._iniciar_processo()
 
     # ---------------------------------------------------------- interface
-    def start(self):
+    def iniciar(self):
         self._stop_event.clear()
-        self._prepare_buffer()
-        self._launch()
-        self._thread = threading.Thread(target=self._watch, daemon=True)
+        self._preparar_buffer()
+        self._iniciar_processo()
+        self._thread = threading.Thread(target=self._vigiar, daemon=True)
         self._thread.start()
 
-    def stop(self):
+    def parar(self):
         self._stop_event.set()
-        if self.is_running():
+        if self.esta_rodando():
             self._process.terminate()
             try:
                 self._process.wait(timeout=5)

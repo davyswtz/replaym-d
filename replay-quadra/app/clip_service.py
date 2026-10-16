@@ -24,12 +24,9 @@ class BusyError(ClipError):
     """Já existe um replay sendo gerado."""
 
 
-def _latest_segments():
+def _ultimos_segmentos():
     """Devolve os últimos segmentos completos, do mais antigo ao mais novo."""
     pattern = f"{config.SEGMENT_PREFIX}*{config.SEGMENT_EXT}"
-
-    # Ordena por data de modificação, NÃO por nome: com o buffer circular os
-    # nomes voltam ao início (seg_019 -> seg_000), então o nome engana.
     files = list(config.BUFFER_DIR.glob(pattern))
 
     # Um dos segmentos ainda está sendo escrito pelo FFmpeg e não pode entrar
@@ -50,13 +47,13 @@ def _latest_segments():
     return complete[-config.SEGMENTS_PER_REPLAY:]
 
 
-def create_replay():
+def criar_replay():
     """Gera o replay e devolve o nome do arquivo criado."""
     if not _lock.acquire(blocking=False):
         raise BusyError("Já existe um replay sendo gerado")
 
     try:
-        segments = _latest_segments()
+        segments = _ultimos_segmentos()
         if not segments:
             raise ClipError("O buffer ainda está vazio. Aguarde alguns segundos.")
 

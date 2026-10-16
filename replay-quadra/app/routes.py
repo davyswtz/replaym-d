@@ -11,14 +11,14 @@ bp = Blueprint("main", __name__)
 
 
 @bp.get("/")
-def index():
+def inicio():
     return render_template("index.html")
 
 
 @bp.post("/replay")
-def create_replay():
+def criar_replay():
     try:
-        name = clip_service.create_replay()
+        name = clip_service.criar_replay()
     except clip_service.BusyError as e:
         return jsonify(error=str(e)), 409
     except clip_service.ClipError as e:
@@ -27,13 +27,13 @@ def create_replay():
 
 
 @bp.get("/replays")
-def list_replays():
-    return jsonify(storage.list_replays())
+def listar_replays():
+    return jsonify(storage.listar_replays())
 
 
 @bp.get("/replays/<name>")
-def get_replay(name):
-    path = storage.get_replay_path(name)
+def obter_replay(name):
+    path = storage.obter_caminho_replay(name)
     if path is None:
         abort(404)
     # conditional=True permite o navegador pular para o meio do vídeo
@@ -46,7 +46,7 @@ def get_replay(name):
 
 
 @bp.delete("/replays/<name>")
-def delete_replay(name):
-    if not storage.delete_replay(name):
+def apagar_replay(name):
+    if not storage.apagar_replay(name):
         abort(404)
     return "", 204

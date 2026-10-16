@@ -4,7 +4,7 @@ from datetime import datetime
 from app import config
 
 
-def list_replays():
+def listar_replays():
     """Lista os replays do mais novo para o mais antigo."""
     pattern = f"{config.REPLAY_PREFIX}*{config.REPLAY_EXT}"
     files = sorted(
@@ -22,7 +22,7 @@ def list_replays():
     ]
 
 
-def get_replay_path(name):
+def obter_caminho_replay(name):
     """Devolve o caminho do replay ou None se o nome for inválido.
 
     Segurança (path traversal): o nome vem da URL, então alguém poderia
@@ -41,9 +41,9 @@ def get_replay_path(name):
     return path
 
 
-def delete_replay(name):
+def apagar_replay(name):
     """Apaga um replay. Devolve True se apagou, False se não existe."""
-    path = get_replay_path(name)
+    path = obter_caminho_replay(name)
     if path is None:
         return False
     path.unlink()
