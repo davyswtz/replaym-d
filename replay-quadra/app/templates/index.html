@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Replay da Quadra</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 16px;
+      font-family: system-ui, sans-serif;
+      background: #111; color: #eee;
+      max-width: 720px; margin-inline: auto;
+    }
+    h1 { font-size: 1.2rem; margin: 0 0 16px; }
+    #btn-replay {
+      width: 100%; padding: 28px 16px;
+      font-size: 1.6rem; font-weight: 700;
+      border: 0; border-radius: 16px;
+      background: #f5a623; color: #111; cursor: pointer;
+    }
+    #btn-replay:disabled { opacity: .5; cursor: wait; }
+    #status { min-height: 1.4em; margin: 10px 0 16px; text-align: center; }
+    #status.ok { color: #6fd36f; }
+    #status.erro { color: #ff6b6b; }
+    video { width: 100%; border-radius: 12px; background: #000; display: none; }
+    h2 { font-size: 1rem; margin: 24px 0 8px; }
+    ul { list-style: none; margin: 0; padding: 0; }
+    li {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; margin-bottom: 8px;
+      background: #1c1c1c; border-radius: 10px;
+    }
+    li .info { flex: 1; font-size: .9rem; }
+    li .info small { color: #999; display: block; }
+    li button, li a {
+      padding: 8px 10px; border: 0; border-radius: 8px;
+      background: #333; color: #eee; font-size: .85rem;
+      text-decoration: none; cursor: pointer;
+    }
+    li button.apagar { background: #5a2020; }
+  </style>
+</head>
+<body>
+  <h1>Replay da Quadra</h1>
+
+  <button id="btn-replay">SALVAR REPLAY (últimos 30s)</button>
+  <div id="status"></div>
+
+  <video id="player" controls playsinline></video>
+
+  <h2>Replays salvos</h2>
+  <ul id="lista"></ul>
+
+  <script>
+    const btn = document.getElementById('btn-replay');
+    const statusEl = document.getElementById('status');
+    const player = document.getElementById('player');
+    const lista = document.getElementById('lista');
+
+    function setStatus(texto, tipo) {
+      statusEl.textContent = texto;
+      statusEl.className = tipo || '';
+    }
+
+    function assistir(nome) {
+      player.src = '/replays/' + encodeURIComponent(nome);
+      player.style.display = 'block';
+      player.play().catch(() => {});
+      player.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    async function apagar(nome) {
+      if (!confirm('Apagar ' + nome + '?')) return;
+      const res = await fetch('/replays/' + encodeURIComponent(nome), { method: 'DELETE' });
+      if (res.ok) carregarLista();
+      else setStatus('Não foi possível apagar', 'erro');
+    }
+
+    async function carregarLista() {
+      const res = await fetch('/replays');
+      const replays = await res.json();
+      lista.innerHTML = '';
+
+      for (const r of replays) {
+        const li = document.createElement('li');
+
+        const info = document.createElement('div');
+        info.className = 'info';
+        info.textContent = new Date(r.created_at).toLocaleString('pt-BR');
+        const small = document.createElement('small');
+        small.textContent = r.size_mb + ' MB';
+        info.appendChild(small);
+
+        const bVer = document.createElement('button');
+        bVer.textContent = 'Assistir';
+        bVer.onclick = () => assistir(r.name);
+
+        const bBaixar = document.createElement('a');
+        bBaixar.textContent = 'Baixar';
+        bBaixar.href = '/replays/' + encodeURIComponent(r.name) + '?download=1';
+
+        const bApagar = document.createElement('button');
+        bApagar.textContent = 'Apagar';
+        bApagar.className = 'apagar';
+        bApagar.onclick = () => apagar(r.name);
+
+        li.append(info, bVer, bBaixar, bApagar);
+        lista.appendChild(li);
+      }
+    }
+
+    async function salvarReplay() {
+      btn.disabled = true;
+      setStatus('Salvando replay...');
+      try {
+        const res = await fetch('/replay', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro ao salvar o replay');
+        setStatus('Replay salvo!', 'ok');
+        await carregarLista();
+        assistir(data.name);
+      } catch (e) {
+        setStatus(e.message, 'erro');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    btn.addEventListener('click', salvarReplay);
+    carregarLista();
+  </script>
+</body>
+</html>
